@@ -8,12 +8,15 @@ public class PlayerController : MonoBehaviour
 	public float fireShootSpeed = 2f;
 	public float firingRate = 0.1f;
 	public GameObject shoot;
+	public int playerLife = 3;
+	public AudioClip shootSound;
 
 	private float xMin;
 	private float xMax;
 
 	void Start ()
 	{
+		ScoreKeeper.Reset ();
 		float distance = transform.position.z - Camera.main.transform.position.z;
 		Vector3 leftmost = Camera.main.ViewportToWorldPoint (new Vector3 (0, 0, distance));
 		Vector3 rightmost = Camera.main.ViewportToWorldPoint (new Vector3 (1, 0, distance));
@@ -41,7 +44,27 @@ public class PlayerController : MonoBehaviour
 
 	void Fire ()
 	{
-		var fireShoot = (GameObject)Instantiate (shoot, transform.position, Quaternion.identity);
-		fireShoot.rigidbody2D.velocity = new Vector3 (0, fireShootSpeed, 0);
+		var fireShoot = (GameObject)Instantiate (shoot, new Vector3(transform.position.x, transform.position.y + .44f, transform.position.z), Quaternion.identity);
+		AudioSource.PlayClipAtPoint (shootSound, transform.position);
+		fireShoot.GetComponent<Rigidbody2D>().velocity = new Vector3 (0, fireShootSpeed, 0);
+	}
+
+	void OnTriggerEnter2D (Collider2D col)
+	{
+		var projectile = col.gameObject.GetComponent<Projectile> () as Projectile;
+		if (projectile != null) {
+			projectile.Hit ();
+			playerLife -= projectile.getDamage ();
+			if (playerLife <= 0) {
+				Die ();
+			}
+		}
+	}
+
+	void Die ()
+	{
+		var levelManager = GameObject.Find ("LevelManager").GetComponent<LevelManager> ();
+		levelManager.LoadLevel ("Lose");
+		Destroy (gameObject);
 	}
 }
